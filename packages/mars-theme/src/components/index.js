@@ -1,4 +1,4 @@
-import React from "react";
+import React,{useEffect} from "react";
 import { Global, css, connect, styled, Head } from "frontity";
 import Switch from "@frontity/components/switch";
 import Header from "./header";
@@ -16,7 +16,36 @@ import { Auth0Provider, useAuth0 } from "@auth0/auth0-react";
 const Theme = ({ state }) => {
   // Get information about the current URL.
   const data = state.source.get(state.router.link);
+    const { user, isAuthenticated, getAccessTokenSilently } = useAuth0();
 
+  useEffect(() => { 
+    const getUserMetadata = async () => {
+      const domain ="https://test.frontity.org/";
+
+      try {
+        const accessToken = await getAccessTokenSilently({
+          audience: `https://${domain}/api/v2/`,
+          scope: "read:current_user",
+        });
+
+        const userDetailsByIdUrl = `https://${domain}/api/v2/users/${user.sub}`;
+
+        const metadataResponse = await fetch(userDetailsByIdUrl, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        const { user_metadata } = await metadataResponse.json();
+
+        setUserMetadata(user_metadata);
+      } catch (e) {
+        console.log(e.message);
+      }
+    };
+
+    getUserMetadata(); 
+  }, []);
   return (
     <Auth0Provider
     domain="https://test.frontity.org/"
